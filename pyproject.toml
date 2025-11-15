@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-catalog-sparql-playground"
+version = "0.1.0"
+description = "A tiny, self-contained playground for browsing and querying RDF data in the browser"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Benno Kruit" }]
+dependencies = ["defopt>=6.4"]
+
+[project.scripts]
+make-catalog = "make_catalog:main"
+copy-query-html = "make_catalog:copy_query_html"
+
+[tool.setuptools]
+py-modules = ["make_catalog"]
