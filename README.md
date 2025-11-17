@@ -9,15 +9,17 @@ A tiny, self-contained playground for browsing and querying RDF data in the brow
 
 Everything runs in your browser; there’s no SPARQL endpoint. Comunica queries the RDF files directly.
 
+🚀 [**Live demo**](data-catalog-sparql-playground/query.html) 🚀
 
 ## Repository layout
 
-- `query.html` — YASGUI + Comunica UI that reads ./catalog.json
-- `make_catalog.py` — CLI to build catalog.json from your data and queries
+- `make_catalog.py` — CLI to build `catalog.json` from your data and queries
+- `data-catalog-sparql-playground/`:
+  - `query.html` — YASGUI + Comunica UI that reads `catalog.json`
+  - `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, …)
+  - `queries/` — put example SPARQL files here (e.g., .rq, .sparql)
 - `run-server.sh` — HTTPS static server (uses npx http-server)
 - `toggle-hosts.sh` — Toggle /etc/hosts for a local GitHub Pages-like hostname
-- `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, …)
-- `queries/` — put example SPARQL files here (e.g., .rq, .sparql)
 
 
 ## Prerequisites

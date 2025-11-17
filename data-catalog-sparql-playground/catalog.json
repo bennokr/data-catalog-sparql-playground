@@ -1,0 +1,26 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "DataCatalog",
+  "name": "Playwright Test Catalog",
+  "dataset": [
+    {
+      "@type": "Dataset",
+      "name": "Example dataset",
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "contentUrl": "data/example.ttl",
+          "encodingFormat": "text/turtle"
+        }
+      ]
+    }
+  ],
+  "hasPart": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "List things",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "queries/list-things.sparql"
+    }
+  ]
+}

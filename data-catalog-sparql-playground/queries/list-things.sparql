@@ -1,0 +1,7 @@
+PREFIX schema: <https://schema.org/>
+SELECT ?thing ?name
+WHERE {
+  ?thing a schema:Thing ;
+        schema:name ?name .
+}
+ORDER BY ?name

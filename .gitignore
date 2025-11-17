@@ -1,0 +1,8 @@
+node_modules/
+playwright-report/
+test-results/
+
+# macOS / Linux cruft
+.DS_Store
+Thumbs.db
+*.pem

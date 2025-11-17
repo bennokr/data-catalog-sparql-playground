@@ -1,0 +1,10 @@
+@prefix ex: <http://example.com/> .
+@prefix schema: <https://schema.org/> .
+
+ex:item1 a schema:Thing ;
+  schema:name "Example item" ;
+  schema:category "Demo" .
+
+ex:item2 a schema:Thing ;
+  schema:name "Second item" ;
+  schema:category "Demo" .
