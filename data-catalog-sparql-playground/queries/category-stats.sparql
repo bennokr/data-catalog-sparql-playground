@@ -1,0 +1,10 @@
+PREFIX schema: <https://schema.org/>
+#defaultView:Stats
+SELECT ?category (COUNT(?thing) AS ?count) (AVG(?rating) AS ?averageRating)
+WHERE {
+  ?thing a schema:Thing ;
+        schema:category ?category ;
+        schema:ratingValue ?rating .
+}
+GROUP BY ?category
+ORDER BY ?category

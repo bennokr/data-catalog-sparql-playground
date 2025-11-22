@@ -27,7 +27,46 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
 
 <script src="https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js"></script>
 <script src="https://unpkg.com/@triply/yasgui/build/yasgui.min.js"></script>
+<!-- Sparnatural Yasgui/Yasr plugins bundle (download from https://github.com/sparna-git/Sparnatural-yasgui-plugins/releases) -->
+<script src="sparnatural-yasgui-plugins.js"></script>
 <script>
+  // Parse WDQS-style "#defaultView:PluginName{...}" hints from query comments
+  function parseViewHints(queryText) {
+    const hints = {
+      defaultPlugin: null,
+      defaultOptions: null,
+      views: {}
+    };
+    if (!queryText) return hints;
+
+    const lines = queryText.split(/\r?\n/);
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line.startsWith("#")) continue;
+
+      const m = line.match(/^#\s*(defaultView|view)\s*:\s*([A-Za-z0-9_-]+)\s*(\{.*\})?\s*$/);
+      if (!m) continue;
+
+      const [, kind, name, jsonPart] = m;
+      let opts = null;
+      if (jsonPart) {
+        try {
+          opts = JSON.parse(jsonPart);
+        } catch (e) {
+          // ignore invalid JSON in comments
+        }
+      }
+
+      if (kind === "defaultView") {
+        hints.defaultPlugin = name;
+        hints.defaultOptions = opts;
+      } else {
+        hints.views[name] = opts || {};
+      }
+    }
+    return hints;
+  }
+
   /** Helpers */
   const _asArray = (x) => Array.isArray(x) ? x : (x == null ? [] : [x]);
   const _isType = (node, t) => _asArray(node?.["@type"]).includes(t);
@@ -116,7 +155,10 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
       if (chip) chip.textContent = "Running…";
 
       try {
-        const result = await engine.query(yasqe.getValue(), { sources: await sourcesPromise });
+        const queryText = yasqe.getValue();
+        const viewHints = parseViewHints(queryText);
+
+        const result = await engine.query(queryText, { sources: await sourcesPromise });
         const media =
           result.resultType === "bindings" ? "application/sparql-results+json" :
           result.resultType === "boolean"  ? "application/boolean" :
@@ -127,6 +169,39 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
 
         // Hand off to YASR
         yasr.setResponse(payload, media);
+
+        // Apply "#defaultView:PluginName{...}" after results are available
+        if (viewHints.defaultPlugin && yasr.plugins && yasr.plugins[viewHints.defaultPlugin]) {
+          const pluginInstance = yasr.plugins[viewHints.defaultPlugin];
+
+          // Seed minimal query metadata so plugins with strict canHandleResults checks stay available
+          pluginInstance.query = pluginInstance.query || { variables: [] };
+          pluginInstance.queryConfiguration = pluginInstance.queryConfiguration || {};
+          if (viewHints.defaultPlugin === "Stats") {
+            const vars = pluginInstance.query.variables;
+            if (Array.isArray(vars) && vars.length === 0) {
+              vars.push({ expression: {} });
+            }
+          }
+
+          // switch to requested plugin (e.g. TableX, Grid, Stats, Map)
+          const canHandle = pluginInstance.canHandleResults;
+          if (typeof canHandle === "function") {
+            pluginInstance.canHandleResults = () => true;
+          }
+
+          yasr.selectPlugin(viewHints.defaultPlugin);
+
+          if (typeof canHandle === "function") {
+            pluginInstance.canHandleResults = canHandle;
+          }
+
+          // merge any JSON options into the plugin config
+          const opts = viewHints.defaultOptions;
+          if (opts && pluginInstance && pluginInstance.config) {
+            Object.assign(pluginInstance.config, opts);
+          }
+        }
 
         // Update chip with count + time
         const secs = ((performance.now() - t0) / 1000).toFixed(2);
@@ -209,6 +284,24 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
     
   function localUrl(p){ return new URL(p, location.href).toString(); }
 
+  // Register Sparnatural Yasr plugins globally before Yasgui instantiation
+  const Yasr = window.Yasr || (window.Yasgui && window.Yasgui.Yasr);
+  if (Yasr && window.SparnaturalYasguiPlugins) {
+    Yasr.registerPlugin("TableX", SparnaturalYasguiPlugins.TableX);
+    Yasr.registerPlugin("Grid",   SparnaturalYasguiPlugins.GridPlugin);
+    Yasr.registerPlugin("Stats",  SparnaturalYasguiPlugins.StatsPlugin);
+    Yasr.registerPlugin("Map",    SparnaturalYasguiPlugins.MapPlugin);
+
+    // Put Sparnatural views first, keep built-in ones as fallbacks
+    const baseOrder = Yasr.defaults.pluginOrder || ["table", "response"];
+    const customNames = ["TableX", "Grid", "Stats", "Map"];
+    const customOrder = customNames.concat(
+      baseOrder.filter(name => !customNames.includes(name))
+    );
+    Yasr.defaults.pluginOrder = customOrder;
+    Yasr.defaults.defaultPlugin = "TableX";
+  }
+
   const prefixes = {
     rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     rdfs: "http://www.w3.org/2000/01/rdf-schema#",
@@ -222,6 +315,7 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
     requestConfig: { endpoint: location.origin + "/__noop__" },
     copyEndpointOnNewTab: false
   });
+  window.yasgui = yasgui;
 
   const sourcesPromise = loadComunicaSourcesFromCatalog();
   const realAddTab = yasgui.addTab.bind(yasgui);

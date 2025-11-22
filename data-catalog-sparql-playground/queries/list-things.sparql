@@ -1,4 +1,5 @@
 PREFIX schema: <https://schema.org/>
+#defaultView:TableX{"pageLength":1}
 SELECT ?thing ?name
 WHERE {
   ?thing a schema:Thing ;

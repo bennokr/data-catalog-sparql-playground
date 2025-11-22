@@ -1,0 +1,9 @@
+PREFIX schema: <https://schema.org/>
+#defaultView:Grid{"pageLength":2}
+SELECT ?thing ?name ?category
+WHERE {
+  ?thing a schema:Thing ;
+        schema:name ?name ;
+        schema:category ?category .
+}
+ORDER BY ?name

@@ -21,6 +21,24 @@
       "name": "List things",
       "encodingFormat": "application/sparql-query",
       "contentUrl": "queries/list-things.sparql"
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Grid view",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "queries/list-things-grid.sparql"
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Category stats",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "queries/category-stats.sparql"
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Geo points",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "queries/geo-points.sparql"
     }
   ]
 }

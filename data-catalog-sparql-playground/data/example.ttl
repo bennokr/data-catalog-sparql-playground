@@ -1,10 +1,27 @@
 @prefix ex: <http://example.com/> .
 @prefix schema: <https://schema.org/> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
 
 ex:item1 a schema:Thing ;
   schema:name "Example item" ;
-  schema:category "Demo" .
+  schema:category "Demo" ;
+  schema:ratingValue 5 ;
+  geo:asWKT "POINT(6.14569 46.20222)"^^geo:wktLiteral .
 
 ex:item2 a schema:Thing ;
   schema:name "Second item" ;
-  schema:category "Demo" .
+  schema:category "Demo" ;
+  schema:ratingValue 3 ;
+  geo:asWKT "POINT(6.15 46.205)"^^geo:wktLiteral .
+
+ex:item3 a schema:Thing ;
+  schema:name "Third item" ;
+  schema:category "NoDemo" ;
+  schema:ratingValue 3 ;
+  geo:asWKT "POINT(6.15 46.205)"^^geo:wktLiteral .
+
+ex:item4 a schema:Thing ;
+  schema:name "Fourth item" ;
+  schema:category "NoDemo" ;
+  schema:ratingValue 3 ;
+  geo:asWKT "POINT(6.15 46.205)"^^geo:wktLiteral .

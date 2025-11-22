@@ -11,7 +11,7 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
   },
   webServer: {
-    command: 'npx http-server -p 4173',
+    command: 'npx http-server data-catalog-sparql-playground -p 4173',
     port: 4173,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
