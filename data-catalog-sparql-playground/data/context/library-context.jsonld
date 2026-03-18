@@ -1,0 +1,13 @@
+{
+  "@context": {
+    "id": "@id",
+    "type": "@type",
+    "schema": "https://schema.org/",
+    "name": "schema:name",
+    "description": "schema:description",
+    "license": {
+      "@id": "schema:license",
+      "@type": "@id"
+    }
+  }
+}
