@@ -22,11 +22,11 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
 }
 @keyframes yasqe-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/@triply/yasgui/build/yasgui.min.css">
+<link rel="stylesheet" href="vendor/yasgui.min.css">
 <div id="app" style="height:100vh"></div>
 
-<script src="https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js"></script>
-<script src="https://unpkg.com/@triply/yasgui/build/yasgui.min.js"></script>
+<script src="vendor/comunica-browser.js"></script>
+<script src="vendor/yasgui.min.js"></script>
 <!-- Sparnatural Yasgui/Yasr plugins bundle (download from https://github.com/sparna-git/Sparnatural-yasgui-plugins/releases) -->
 <script src="sparnatural-yasgui-plugins.js"></script>
 <script>
@@ -71,6 +71,48 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
   const _asArray = (x) => Array.isArray(x) ? x : (x == null ? [] : [x]);
   const _isType = (node, t) => _asArray(node?.["@type"]).includes(t);
   const _abs = (u) => new URL(u, location.href).toString();
+
+  async function inlineJsonLdContext(context, baseUrl) {
+    if (typeof context === "string") {
+      const contextUrl = new URL(context, baseUrl).toString();
+      const fetched = await fetch(contextUrl, {
+        headers: { accept: "application/ld+json, application/json" }
+      }).then((r) => r.json());
+      const nested = fetched && typeof fetched === "object" && fetched["@context"]
+        ? fetched["@context"]
+        : fetched;
+      return inlineJsonLdContext(nested, contextUrl);
+    }
+    if (Array.isArray(context)) {
+      const out = [];
+      for (const entry of context) {
+        out.push(await inlineJsonLdContext(entry, baseUrl));
+      }
+      return out;
+    }
+    if (context && typeof context === "object") {
+      return context;
+    }
+    return context;
+  }
+
+  async function jsonLdUrlToSerializedSource(sourceUrl) {
+    const text = await fetch(sourceUrl, {
+      headers: { accept: "application/ld+json, application/json" }
+    }).then((r) => r.text());
+    const json = JSON.parse(text);
+
+    if (json && typeof json === "object" && json["@context"]) {
+      json["@context"] = await inlineJsonLdContext(json["@context"], sourceUrl);
+    }
+
+    return {
+      type: "serialized",
+      value: JSON.stringify(json),
+      mediaType: "application/ld+json",
+      baseIRI: sourceUrl
+    };
+  }
   
   /**
    * Read a schema.org/DCAT catalog and return normalized nodes.
@@ -130,12 +172,23 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
           dist?.["dcat:downloadURL"] || dist?.url;
         if (!url) continue;
         if (!media || okTypes.has(String(media).toLowerCase())) {
-          urls.push(_abs(url));
+          urls.push({ url: _abs(url), media: media ? String(media).toLowerCase() : null });
         }
       }
     }
   
-    return [...new Set(urls)].map(u => ({ type: "file", value: u }));
+    const uniqueEntries = Array.from(new Map(urls.map((entry) => [`${entry.media || ""}|${entry.url}`, entry])).values());
+
+    const sources = [];
+    for (const entry of uniqueEntries) {
+      const { url, media } = entry;
+      if (String(media || "").toLowerCase() === "application/ld+json") {
+        sources.push(await jsonLdUrlToSerializedSource(url));
+      } else {
+        sources.push({ type: "file", value: url });
+      }
+    }
+    return sources;
   }
   
   /** Wire a Yasgui tab so Run and Cmd/Ctrl-Enter execute Comunica */
@@ -184,6 +237,12 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
             }
           }
 
+          // merge any JSON options into the plugin config
+          const opts = viewHints.defaultOptions;
+          if (opts && pluginInstance && pluginInstance.config) {
+            Object.assign(pluginInstance.config, opts);
+          }
+
           // switch to requested plugin (e.g. TableX, Grid, Stats, Map)
           const canHandle = pluginInstance.canHandleResults;
           if (typeof canHandle === "function") {
@@ -191,16 +250,17 @@ html,body,#app{height:100%;margin:0;font-family:sans-serif}
           }
 
           yasr.selectPlugin(viewHints.defaultPlugin);
+          yasr.drawnPlugin = viewHints.defaultPlugin;
+
+          if (media === "application/sparql-results+json") {
+            try { pluginInstance.results = JSON.parse(payload)?.results; } catch {}
+          }
 
           if (typeof canHandle === "function") {
             pluginInstance.canHandleResults = canHandle;
           }
-
-          // merge any JSON options into the plugin config
-          const opts = viewHints.defaultOptions;
-          if (opts && pluginInstance && pluginInstance.config) {
-            Object.assign(pluginInstance.config, opts);
-          }
+        } else {
+          yasr.drawnPlugin = yasr.getSelectedPlugin ? yasr.getSelectedPlugin() : null;
         }
 
         // Update chip with count + time

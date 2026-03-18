@@ -1,0 +1,6 @@
+PREFIX schema: <https://schema.org/>
+SELECT ?work ?name
+WHERE {
+  ?work a schema:CreativeWork ;
+        schema:name ?name .
+}
