@@ -20,6 +20,7 @@ _RDF_TYPES = {
     ".nt":   "application/n-triples",
     ".nq":   "application/n-quads",
     ".jsonld": "application/ld+json",
+    ".json": "application/ld+json",
     ".rdf":  "application/rdf+xml",
     ".xml":  "application/rdf+xml",
     ".rq": "application/sparql-query",

@@ -13,6 +13,17 @@
           "encodingFormat": "text/turtle"
         }
       ]
+    },
+    {
+      "@type": "Dataset",
+      "name": "JSON-LD .json source",
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "contentUrl": "data/library-item.json",
+          "encodingFormat": "application/ld+json"
+        }
+      ]
     }
   ],
   "hasPart": [
@@ -39,6 +50,12 @@
       "name": "Geo points",
       "encodingFormat": "application/sparql-query",
       "contentUrl": "queries/geo-points.sparql"
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Library JSON-LD",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "queries/library-item-jsonld.sparql"
     }
   ]
 }
