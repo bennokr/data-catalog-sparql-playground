@@ -1,0 +1,8 @@
+{
+  "@context": "./context/library-context.jsonld",
+  "id": "https://example.com/resource/library-item",
+  "type": "schema:CreativeWork",
+  "name": "JSON source wired through local @context",
+  "description": "Sample JSON-LD document served from a .json file with an external context.",
+  "license": "https://creativecommons.org/licenses/by/4.0/"
+}

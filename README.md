@@ -16,7 +16,7 @@ Everything runs in your browser; there’s no SPARQL endpoint. Comunica queries 
 - `make_catalog.py` — CLI to build `catalog.json` from your data and queries
 - `data-catalog-sparql-playground/`:
   - `query.html` — YASGUI + Comunica UI that reads `catalog.json`
-  - `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, …)
+  - `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, .json with JSON-LD, …)
   - `queries/` — put example SPARQL files here (e.g., .rq, .sparql)
 - `run-server.sh` — HTTPS static server (uses npx http-server)
 - `toggle-hosts.sh` — Toggle /etc/hosts for a local GitHub Pages-like hostname
@@ -88,7 +88,7 @@ python make_catalog.py data/* \
 ### Notes
 
 - `base-url` should be the public URL where these files would be hosted (e.g., GitHub Pages root). The tool keeps your relative paths intact and prefixes them with `base-url` for contentUrl.
-- Supported RDF types are auto-guessed: `.ttl`, `.trig`, `.nt`, `.nq`, `.jsonld`, `.rdf`/`.xml`, plus SPARQL queries (`.rq`/`.sparql`).
+- Supported RDF types are auto-guessed: `.ttl`, `.trig`, `.nt`, `.nq`, `.jsonld`, `.json` (treated as JSON-LD), `.rdf`/`.xml`, plus SPARQL queries (`.rq`/`.sparql`).
 - A --license URL can be added to all datasets.
 - Example queries are added as SoftwareSourceCode entries and will appear as YASGUI tabs automatically in query.html.
 
@@ -151,3 +151,11 @@ Why mimic a Pages-like hostname?
 - Commit catalog.json, query.html, data/, and queries/ to your Pages branch.
 - Set base-url to your real Pages URL when generating the catalog.
 - Then open https://USER.github.io/query.html and query away—no server needed.
+
+
+## Test and debug harness (red/green TDD)
+
+- `./scripts/playwright-harness.sh red` runs the fast unit checks first (red phase).
+- `./scripts/playwright-harness.sh green` runs unit checks and then Playwright browser tests (green phase).
+- `./scripts/playwright-harness.sh ui` opens Playwright in UI/debug mode.
+- `./scripts/rodney-help.sh` runs `uvx rodney --help` when `uvx` is available.

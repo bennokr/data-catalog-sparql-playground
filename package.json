@@ -6,7 +6,11 @@
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "serve": "http-server -p 4173"
+    "serve": "http-server -p 4173",
+    "tdd:red": "./scripts/playwright-harness.sh red",
+    "tdd:green": "./scripts/playwright-harness.sh green",
+    "tdd:ui": "./scripts/playwright-harness.sh ui",
+    "rodney:help": "./scripts/rodney-help.sh"
   },
   "keywords": [],
   "author": "",
