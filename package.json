@@ -10,7 +10,8 @@
     "tdd:red": "./scripts/playwright-harness.sh red",
     "tdd:green": "./scripts/playwright-harness.sh green",
     "tdd:ui": "./scripts/playwright-harness.sh ui",
-    "rodney:help": "./scripts/rodney-help.sh"
+    "rodney:help": "./scripts/rodney-help.sh",
+    "release:check": "./scripts/playwright-harness.sh green"
   },
   "keywords": [],
   "author": "",

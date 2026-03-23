@@ -1,0 +1,102 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f7fb;
+  color: #132238;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: radial-gradient(circle at top, #ffffff 0%, #eef4ff 45%, #f5f7fb 100%);
+}
+
+playground-page,
+.playground-page {
+  min-height: 100%;
+  display: block;
+}
+
+.playground-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.playground-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4169e1;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 2.3rem);
+}
+
+.playground-copy,
+.playground-status {
+  margin: 0.5rem 0 0;
+  color: #48627d;
+}
+
+.playground-status {
+  max-width: 22rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #d7e1f3;
+  border-radius: 0.9rem;
+  background: rgba(255,255,255,0.75);
+}
+
+.yasgui-host {
+  min-height: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(30, 64, 175, 0.08);
+}
+
+.yasgui-host,
+.yasgui-host .yasgui {
+  height: 100%;
+}
+
+.yasgui .controlbar {
+  display: none !important;
+}
+
+.yasqe_queryButton.busy {
+  position: relative;
+  color: transparent !important;
+}
+
+.yasqe_queryButton.busy::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-left-color: rgba(255, 255, 255, 0.2);
+  animation: yasqe-spin 1s linear infinite;
+}
+
+@keyframes yasqe-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

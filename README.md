@@ -4,6 +4,7 @@ A tiny, self-contained playground for browsing and querying RDF data in the brow
 
 - `make_catalog.py` generates a schema.org DataCatalog (JSON-LD) from your RDF files (and optional example SPARQL queries).
 - `query.html` loads that catalog, builds in-browser Comunica sources from the distributions, and provides a YASGUI workspace with auto-added example-query tabs.
+- `minimal.html` provides a second, stripped-down demo page that reuses the same web components without the special Sparnatural result plugins.
 - `run-server.sh` serves the site over HTTPS on port 443 (handy to mimic a GitHub Pages hostname locally).
 - `toggle-hosts.sh` toggles an /etc/hosts entry to map a chosen hostname (e.g., username.github.io) to localhost.
 
@@ -15,7 +16,10 @@ Everything runs in your browser; there’s no SPARQL endpoint. Comunica queries 
 
 - `make_catalog.py` — CLI to build `catalog.json` from your data and queries
 - `data-catalog-sparql-playground/`:
-  - `query.html` — YASGUI + Comunica UI that reads `catalog.json`
+  - `query.html` — advanced YASGUI + Comunica demo with special Grid/Stats/Map result views
+  - `minimal.html` — minimal YASGUI + Comunica demo with standard YASR result views only
+  - `components/` — small web components plus focused helper modules for plugins, tabs, execution, and shell rendering
+  - `docs/` — implementation plans and design notes
   - `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, .json with JSON-LD, …)
   - `queries/` — put example SPARQL files here (e.g., .rq, .sparql)
 - `run-server.sh` — HTTPS static server (uses npx http-server)
@@ -120,7 +124,8 @@ Why mimic a Pages-like hostname?
 
 ## Using the playground
 
-- `query.html` reads `./catalog.json` by default.
+- `query.html` reads `./catalog.json` by default and enables special Grid, Stats, and Map result plugins when query comments request them.
+- `minimal.html` reads the same catalog but keeps YASR on its standard built-in result views for a smaller demo surface, even when example queries contain special view hints.
 - Datasets with RDF distributions become Comunica sources.
 - Example queries (from catalog `hasPart SoftwareSourceCode` with SPARQL media) are added as tabs.
 - Click Run or press Cmd/Ctrl-Enter to execute queries in the browser.
@@ -133,6 +138,16 @@ Why mimic a Pages-like hostname?
 - Re-run make_catalog.py to regenerate catalog.json.
 - Refresh the browser; new sources and example tabs appear.
 
+
+
+## Architecture and maintenance notes
+
+If you are working on the playground internals rather than just using the demo pages, start with:
+
+- `data-catalog-sparql-playground/docs/architecture-notes.md` for a short architecture walkthrough, a design critique of the current component split, and suggested follow-up improvements.
+- `data-catalog-sparql-playground/docs/runtime-contract.md` for the browser/runtime contract of `<yasgui-playground>`.
+- `data-catalog-sparql-playground/docs/release-checklist.md` for the release checklist and verification flow.
+- `data-catalog-sparql-playground/docs/vega-lite-plan.md` for the planned next visualization result type.
 
 ## Troubleshooting
 
@@ -152,6 +167,14 @@ Why mimic a Pages-like hostname?
 - Set base-url to your real Pages URL when generating the catalog.
 - Then open https://USER.github.io/query.html and query away—no server needed.
 
+
+
+## Release readiness
+
+- The advanced and minimal demos are covered by Playwright UI tests, including tab switching and result-view switching.
+- `npm run release:check` runs the release verification path through the red/green harness.
+- Internal architecture, runtime expectations, and release steps are documented under `data-catalog-sparql-playground/docs/`.
+- Screenshot artifacts under `artifacts/` capture the current advanced and minimal demo surfaces for review.
 
 ## Test and debug harness (red/green TDD)
 
