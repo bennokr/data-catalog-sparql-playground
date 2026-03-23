@@ -2,23 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>SPARQL playground</title>
+    <title>Minimal SPARQL playground</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="vendor/yasgui.min.css">
     <link rel="stylesheet" href="components/app.css">
   </head>
   <body>
-    <playground-page page-title="SPARQL playground">
+    <playground-page page-title="Minimal SPARQL playground">
       <yasgui-playground
-        title="Complex SPARQL playground"
-        eyebrow="Advanced demo"
-        description="A richer demo page with tiny reusable web components and special result layouts for tables, grids, statistics, and maps.">
+        data-special-views="false"
+        title="Minimal SPARQL playground"
+        eyebrow="Core demo"
+        description="A minimal demo page that uses the same component structure but keeps only standard YASR result views.">
       </yasgui-playground>
     </playground-page>
 
     <script src="vendor/comunica-browser.js"></script>
     <script src="vendor/yasgui.min.js"></script>
-    <script src="sparnatural-yasgui-plugins.js"></script>
     <script type="module" src="components/bootstrap.js"></script>
   </body>
 </html>
