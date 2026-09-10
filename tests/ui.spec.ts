@@ -30,6 +30,38 @@ test.describe('SPARQL playground UI', () => {
     await expect(page.getByRole('tab', { name: 'Library JSON-LD' })).toBeVisible();
   });
 
+  test('scopes cached tabs to the deployed catalog path', async ({ page }) => {
+    await page.goto('/query.html');
+
+    const state = await page.evaluate(async () => {
+      const { persistenceIdForCatalog } = await import(
+        '/components/yasgui-playground.js'
+      );
+      const playground = document.querySelector('yasgui-playground') as HTMLElement & {
+        persistenceId: string;
+      };
+
+      return {
+        current: playground.persistenceId,
+        standalone: persistenceIdForCatalog(
+          'catalog.json',
+          new URL('https://bennokr.github.io/data-catalog-sparql-playground/query.html'),
+        ),
+        consumer: persistenceIdForCatalog(
+          'catalog.json',
+          new URL('https://bennokr.github.io/kgci/'),
+        ),
+      };
+    });
+
+    expect(state.current).toBe('sparql-playground:/catalog.json');
+    expect(state.standalone).toBe(
+      'sparql-playground:/data-catalog-sparql-playground/catalog.json',
+    );
+    expect(state.consumer).toBe('sparql-playground:/kgci/catalog.json');
+    expect(state.standalone).not.toBe(state.consumer);
+  });
+
   test('loads .json JSON-LD source and returns it through Comunica', async ({ page }) => {
     await page.goto('/query.html');
 
