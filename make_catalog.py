@@ -179,6 +179,10 @@ def build_site(
     page_name = "minimal.html" if variant == "minimal" else "query.html"
     shutil.copy2(output / page_name, output / "index.html")
     _set_page_title(output / "index.html", name)
+    (output / "minimal.html").unlink(missing_ok=True)
+    (output / "query.html").unlink(missing_ok=True)
+    if variant == "minimal":
+        (output / "sparnatural-yasgui-plugins.js").unlink(missing_ok=True)
     (output / ".nojekyll").write_text("", encoding="utf-8")
 
     deployed_data = _copy_inputs(data_files, output / "data")

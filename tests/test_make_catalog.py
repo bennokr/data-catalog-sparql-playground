@@ -55,6 +55,10 @@ class MakeCatalogTests(unittest.TestCase):
                 "<title>SPARQL playground</title>",
                 encoding="utf-8",
             )
+            (template / "sparnatural-yasgui-plugins.js").write_text(
+                "advanced bundle",
+                encoding="utf-8",
+            )
             (template / "components").mkdir()
             (template / "vendor").mkdir()
             (template / "data").mkdir()
@@ -71,6 +75,9 @@ class MakeCatalogTests(unittest.TestCase):
 
             self.assertTrue((output / "index.html").is_file())
             self.assertTrue((output / ".nojekyll").is_file())
+            self.assertFalse((output / "minimal.html").exists())
+            self.assertFalse((output / "query.html").exists())
+            self.assertFalse((output / "sparnatural-yasgui-plugins.js").exists())
             self.assertTrue((output / "data" / "graph.trig").is_file())
             self.assertFalse((output / "data" / "bundled.ttl").exists())
             document = json.loads((output / "catalog.json").read_text())

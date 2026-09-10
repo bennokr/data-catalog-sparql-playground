@@ -37,8 +37,9 @@ jobs:
 
 In the consumer repository's Pages settings, select **GitHub Actions** as the
 deployment source. The workflow accepts newline-separated glob patterns and
-defaults to the minimal interface. Set `variant: advanced` to include the Grid,
-Stats, and Map result views.
+defaults to the minimal interface. Minimal builds omit the advanced page and
+result-plugin bundle. Set `variant: advanced` to include the Grid, Stats, and Map
+result views.
 
 `WORKFLOW_COMMIT` should be the same release tag or commit SHA in both places.
 This pins the reusable workflow and the playground assets it deploys.
