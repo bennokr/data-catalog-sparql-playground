@@ -91,8 +91,8 @@ jobs:
           VARIANT_INPUT: ${{ inputs.variant }}
         run: |
           if [[ "$GITHUB_REPOSITORY" == "bennokr/data-catalog-sparql-playground" && -z "$DATA_INPUT" ]]; then
-            DATA_INPUT="data-catalog-sparql-playground/data/*"
-            QUERY_INPUT="data-catalog-sparql-playground/queries/*"
+            DATA_INPUT="data-catalog-sparql-playground/data/**/*"
+            QUERY_INPUT="data-catalog-sparql-playground/queries/**/*"
             TITLE_INPUT="Data Catalog SPARQL playground"
             TAGLINE_INPUT="Explore catalog-managed RDF data with SPARQL in your browser."
             VARIANT_INPUT="advanced"
@@ -125,6 +125,11 @@ jobs:
           test -f _site/index.html
           test -f _site/catalog.json
           python3 -m json.tool _site/catalog.json > /dev/null
+
+      - name: Test generated site
+        if: github.repository == 'bennokr/data-catalog-sparql-playground'
+        working-directory: playground
+        run: npx playwright test --config playwright.deployment.config.ts
 
       - name: Configure Pages
         if: github.event_name != 'pull_request'

@@ -118,17 +118,18 @@ def _expand(patterns: Iterable[str], root: Path) -> list[Path]:
     return matches
 
 
-def _copy_inputs(paths: Iterable[Path], destination: Path) -> list[Path]:
+def _copy_inputs(paths: Iterable[Path], destination: Path, source_root: Path) -> list[Path]:
     destination.mkdir(parents=True, exist_ok=True)
     deployed: list[Path] = []
-    names: set[str] = set()
     for source in paths:
-        if source.name in names:
-            raise ValueError(f"Duplicate input filename: {source.name}")
-        names.add(source.name)
-        target = destination / source.name
+        try:
+            relative = source.relative_to(source_root)
+        except ValueError as error:
+            raise ValueError(f"Input is outside the source root: {source}") from error
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-        deployed.append(Path(destination.name) / target.name)
+        deployed.append(Path(destination.name) / relative)
     return deployed
 
 
@@ -201,8 +202,8 @@ def build_site(
         (output / "sparnatural-yasgui-plugins.js").unlink(missing_ok=True)
     (output / ".nojekyll").write_text("", encoding="utf-8")
 
-    deployed_data = _copy_inputs(data_files, output / "data")
-    deployed_queries = _copy_inputs(query_files, output / "queries")
+    deployed_data = _copy_inputs(data_files, output / "data", source_root)
+    deployed_queries = _copy_inputs(query_files, output / "queries", source_root)
     catalog(
         *deployed_data,
         base_url=base_url,

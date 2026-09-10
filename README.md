@@ -51,8 +51,8 @@ The builder uses only the Python standard library:
 
 ```bash
 python make_catalog.py build \
-  --data "data-catalog-sparql-playground/data/*" \
-  --queries "data-catalog-sparql-playground/queries/*" \
+  --data "data-catalog-sparql-playground/data/**/*" \
+  --queries "data-catalog-sparql-playground/queries/**/*" \
   --name "Data Catalog SPARQL playground" \
   --tagline "Explore catalog-managed RDF data with SPARQL in your browser." \
   --variant advanced \
@@ -98,4 +98,5 @@ successful build.
 - `vendor/` contains the production browser bundles used by the generated site.
 
 The generated site uses relative URLs, so it works at a GitHub Pages project path
-without repository-specific configuration.
+without repository-specific configuration. Input paths are preserved below
+`data/` and `queries/`, allowing JSON-LD files to keep relative context links.

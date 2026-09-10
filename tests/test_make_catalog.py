@@ -46,6 +46,11 @@ class MakeCatalogTests(unittest.TestCase):
                 "SELECT * WHERE { ?s ?p ?o }\n",
                 encoding="utf-8",
             )
+            (consumer / "demo" / "context").mkdir()
+            (consumer / "demo" / "context" / "terms.jsonld").write_text(
+                '{"@context": {"name": "https://schema.org/name"}}\n',
+                encoding="utf-8",
+            )
             template.mkdir()
             (template / "minimal.html").write_text(
                 '<title>SPARQL playground</title>\n'
@@ -68,7 +73,7 @@ class MakeCatalogTests(unittest.TestCase):
             (template / "data" / "bundled.ttl").write_text("", encoding="utf-8")
 
             build_site(
-                data_patterns=["demo/*.trig"],
+                data_patterns=["demo/**/*"],
                 query_patterns=["demo/*.rq"],
                 source_root=consumer,
                 template=template,
@@ -87,13 +92,21 @@ class MakeCatalogTests(unittest.TestCase):
             self.assertIn('page-title="Consumer demo"', page)
             self.assertIn('title="Consumer demo"', page)
             self.assertIn('description="Inspect this consumer&#x27;s RDF data."', page)
-            self.assertTrue((output / "data" / "graph.trig").is_file())
+            self.assertTrue((output / "data" / "demo" / "graph.trig").is_file())
+            self.assertTrue(
+                (output / "data" / "demo" / "context" / "terms.jsonld").is_file()
+            )
             self.assertFalse((output / "data" / "bundled.ttl").exists())
             document = json.loads((output / "catalog.json").read_text())
             self.assertEqual(document["name"], "Consumer demo")
+            graph = next(dataset for dataset in document["dataset"] if dataset["name"] == "graph")
             self.assertEqual(
-                document["dataset"][0]["distribution"][0]["contentUrl"],
-                "./data/graph.trig",
+                graph["distribution"][0]["contentUrl"],
+                "./data/demo/graph.trig",
+            )
+            self.assertEqual(
+                document["hasPart"][0]["contentUrl"],
+                "./queries/demo/example.rq",
             )
 
 
