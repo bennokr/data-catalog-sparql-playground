@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: minimal
+      playground-ref:
+        description: Playground commit, branch, or release tag used for the builder
+        required: false
+        type: string
+        default: main
 
 permissions:
   contents: read
@@ -50,7 +55,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bennokr/data-catalog-sparql-playground
-          ref: ${{ github.repository == 'bennokr/data-catalog-sparql-playground' && github.sha || 'main' }}
+          ref: ${{ github.repository == 'bennokr/data-catalog-sparql-playground' && github.sha || inputs.playground-ref }}
           path: playground
 
       - name: Set up Node for playground self-tests

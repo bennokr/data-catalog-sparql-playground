@@ -27,11 +27,12 @@ permissions:
 
 jobs:
   pages:
-    uses: bennokr/data-catalog-sparql-playground/.github/workflows/pages.yml@main
+    uses: bennokr/data-catalog-sparql-playground/.github/workflows/pages.yml@WORKFLOW_COMMIT
     with:
       data: demo/*.trig
       queries: demo/*.rq
       title: My SPARQL playground
+      playground-ref: WORKFLOW_COMMIT
 ```
 
 In the consumer repository's Pages settings, select **GitHub Actions** as the
@@ -39,8 +40,8 @@ deployment source. The workflow accepts newline-separated glob patterns and
 defaults to the minimal interface. Set `variant: advanced` to include the Grid,
 Stats, and Map result views.
 
-For a stable consumer integration, pin the workflow to a release tag or commit
-SHA after the interface has been tagged.
+`WORKFLOW_COMMIT` should be the same release tag or commit SHA in both places.
+This pins the reusable workflow and the playground assets it deploys.
 
 ## Build locally
 
