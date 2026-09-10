@@ -14,6 +14,7 @@ The static HTML entry pages currently provide these globals before `components/b
 `<yasgui-playground>` currently supports:
 
 - `catalog-url` — optional catalog path, defaults to `catalog.json`
+- `persistence-id` — optional YASGUI browser-storage key; by default, the resolved catalog path keeps cached tabs separate between deployments
 - `data-special-views="false"` — disables the Sparnatural result plugins and keeps standard YASR views only
 - `title`, `eyebrow`, `description` — page copy rendered in the shell header
 
@@ -24,11 +25,14 @@ The current implementation intentionally exposes a small amount of runtime state
 - `window.loadComunicaSourcesFromCatalog`
 - `window.fetchDataCatalog`
 
+The custom element also exposes its resolved `persistenceId` after initialization.
+
 ## Behavioral guarantees
 - The advanced page registers `TableX`, `Grid`, `Stats`, and `Map` if the Sparnatural bundle is present.
 - The minimal page ignores special result-view hints and stays on built-in YASR result views.
 - Example SPARQL queries from the catalog are auto-added as tabs.
 - The originally active tab is restored after auto-adding example-query tabs.
+- Cached tabs are scoped to the resolved catalog path, so separate GitHub Pages projects on the same origin do not share them.
 
 ## If you change this contract
 Please update:
