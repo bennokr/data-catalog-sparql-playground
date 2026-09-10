@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import html
 import json
 import mimetypes
@@ -159,6 +160,33 @@ def _set_page_copy(page: Path, title: str, tagline: str) -> None:
     page.write_text(text, encoding="utf-8")
 
 
+def _version_first_party_assets(output: Path) -> None:
+    files = sorted((output / "components").glob("*"))
+    digest = hashlib.sha256()
+    for path in files:
+        if path.is_file():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    version = digest.hexdigest()[:12]
+
+    page = output / "index.html"
+    text = page.read_text(encoding="utf-8")
+    text = re.sub(
+        r'((?:src|href)=")((?:components/)[^"?]+)(")',
+        rf'\g<1>\g<2>?v={version}\g<3>',
+        text,
+    )
+    page.write_text(text, encoding="utf-8")
+
+    import_pattern = re.compile(
+        r'((?:from\s+|import\s*)[\'"])(\./[^\'"?]+\.js)([\'"])'
+    )
+    for module in (output / "components").glob("*.js"):
+        source = module.read_text(encoding="utf-8")
+        source = import_pattern.sub(rf'\g<1>\g<2>?v={version}\g<3>', source)
+        module.write_text(source, encoding="utf-8")
+
+
 def build_site(
     *,
     data_patterns: Iterable[str],
@@ -201,6 +229,7 @@ def build_site(
     if variant == "minimal":
         (output / "sparnatural-yasgui-plugins.js").unlink(missing_ok=True)
     (output / ".nojekyll").write_text("", encoding="utf-8")
+    _version_first_party_assets(output)
 
     deployed_data = _copy_inputs(data_files, output / "data", source_root)
     deployed_queries = _copy_inputs(query_files, output / "queries", source_root)

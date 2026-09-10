@@ -56,7 +56,9 @@ class MakeCatalogTests(unittest.TestCase):
                 '<title>SPARQL playground</title>\n'
                 '<playground-page page-title="SPARQL playground">\n'
                 '<yasgui-playground title="SPARQL playground" '
-                'description="Explore RDF data with SPARQL in your browser.">',
+                'description="Explore RDF data with SPARQL in your browser.">\n'
+                '<link href="components/app.css">\n'
+                '<script type="module" src="components/bootstrap.js"></script>',
                 encoding="utf-8",
             )
             (template / "query.html").write_text(
@@ -68,6 +70,15 @@ class MakeCatalogTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (template / "components").mkdir()
+            (template / "components" / "app.css").write_text("", encoding="utf-8")
+            (template / "components" / "bootstrap.js").write_text(
+                "import './playground-shell.js';\n",
+                encoding="utf-8",
+            )
+            (template / "components" / "playground-shell.js").write_text(
+                "export const ready = true;\n",
+                encoding="utf-8",
+            )
             (template / "vendor").mkdir()
             (template / "data").mkdir()
             (template / "data" / "bundled.ttl").write_text("", encoding="utf-8")
@@ -92,6 +103,12 @@ class MakeCatalogTests(unittest.TestCase):
             self.assertIn('page-title="Consumer demo"', page)
             self.assertIn('title="Consumer demo"', page)
             self.assertIn('description="Inspect this consumer&#x27;s RDF data."', page)
+            self.assertRegex(page, r'components/app\.css\?v=[0-9a-f]{12}')
+            self.assertRegex(page, r'components/bootstrap\.js\?v=[0-9a-f]{12}')
+            bootstrap = (output / "components" / "bootstrap.js").read_text(
+                encoding="utf-8"
+            )
+            self.assertRegex(bootstrap, r"\./playground-shell\.js\?v=[0-9a-f]{12}")
             self.assertTrue((output / "data" / "demo" / "graph.trig").is_file())
             self.assertTrue(
                 (output / "data" / "demo" / "context" / "terms.jsonld").is_file()

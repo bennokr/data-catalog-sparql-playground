@@ -100,3 +100,5 @@ successful build.
 The generated site uses relative URLs, so it works at a GitHub Pages project path
 without repository-specific configuration. Input paths are preserved below
 `data/` and `queries/`, allowing JSON-LD files to keep relative context links.
+Generated asset URLs include a content version so browsers do not mix files from
+different deployments.
