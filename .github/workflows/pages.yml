@@ -34,9 +34,6 @@ on:
         type: string
         default: main
 
-permissions:
-  contents: read
-
 concurrency:
   group: pages-${{ github.repository }}
   cancel-in-progress: true
@@ -44,6 +41,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
 
     steps:
       - name: Check out consumer
