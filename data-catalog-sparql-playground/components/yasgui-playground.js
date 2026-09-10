@@ -7,6 +7,11 @@ import { renderPlaygroundShell, setPlaygroundStatus } from './playground-shell.j
 window.loadComunicaSourcesFromCatalog = loadComunicaSourcesFromCatalog;
 window.fetchDataCatalog = fetchDataCatalog;
 
+export function persistenceIdForCatalog(catalogUrl, location = window.location) {
+  const catalog = new URL(catalogUrl, location.href);
+  return `sparql-playground:${catalog.pathname}`;
+}
+
 export class YasguiPlayground extends HTMLElement {
   connectedCallback() {
     if (this._connected) return;
@@ -22,12 +27,15 @@ export class YasguiPlayground extends HTMLElement {
     registerYasrPlugins({ includeSparnaturalPlugins: this.dataset.specialViews !== 'false' });
 
     const catalogUrl = this.getAttribute('catalog-url') || 'catalog.json';
+    const persistenceId =
+      this.getAttribute('persistence-id') || persistenceIdForCatalog(catalogUrl);
     const app = this.querySelector('[data-role="app"]');
     const engine = new window.Comunica.QueryEngine();
     const sourcesPromise = loadComunicaSourcesFromCatalog(catalogUrl);
     const yasgui = new window.Yasgui(app, {
       requestConfig: { endpoint: `${window.location.origin}/__noop__` },
       copyEndpointOnNewTab: false,
+      persistenceId,
     });
 
     window.yasgui = yasgui;
@@ -50,6 +58,7 @@ export class YasguiPlayground extends HTMLElement {
         : 'Complex demo ready with table, grid, stats, and map result views.',
     );
 
+    this.persistenceId = persistenceId;
     this.yasgui = yasgui;
   }
 }
