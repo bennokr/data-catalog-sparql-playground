@@ -32,6 +32,7 @@ The custom element also exposes its resolved `persistenceId` after initializatio
 - The minimal page ignores special result-view hints and stays on built-in YASR result views.
 - Example SPARQL queries from the catalog are auto-added as tabs.
 - The originally active tab is restored after auto-adding example-query tabs.
+- Only the selected tab's query editor and results are visible.
 - Cached tabs are scoped to the resolved catalog path, so separate GitHub Pages projects on the same origin do not share them.
 
 ## If you change this contract

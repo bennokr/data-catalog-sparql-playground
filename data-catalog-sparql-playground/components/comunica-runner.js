@@ -67,11 +67,12 @@ function describeResult(payload, mediaType, elapsedSeconds) {
 }
 
 export function wireTabForComunica(tab, engine, sourcesPromise) {
-  if (tab.__wiredForComunica) return;
+  if (tab.__wiredForComunica) return true;
 
-  tab.show();
-  const yasqe = tab.getYasqe();
-  const yasr = tab.getYasr();
+  const yasqe = tab.getYasqe?.();
+  const yasr = tab.getYasr?.();
+  if (!yasqe || !yasr) return false;
+
   const tabRoot = yasqe.getWrapperElement().closest('.tabPanel') || yasqe.getWrapperElement().parentElement;
   const runButton = tabRoot?.querySelector('.yasqe_queryButton');
   const chip = (yasr.rootEl || yasr.container)?.querySelector('.yasr_response_chip');
@@ -113,4 +114,5 @@ export function wireTabForComunica(tab, engine, sourcesPromise) {
   });
 
   tab.__wiredForComunica = true;
+  return true;
 }

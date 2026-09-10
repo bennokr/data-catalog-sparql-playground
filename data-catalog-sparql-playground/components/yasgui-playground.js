@@ -42,12 +42,19 @@ export class YasguiPlayground extends HTMLElement {
 
     const originalAddTab = yasgui.addTab.bind(yasgui);
     yasgui.addTab = (...args) => {
+      const previousTab = yasgui.getTab();
       const tab = originalAddTab(...args);
+      if (previousTab && previousTab !== tab && yasgui.getTab() === tab) {
+        previousTab.hide();
+      }
       wireTabForComunica(tab, engine, sourcesPromise);
       return tab;
     };
 
     yasgui.on('tabChange', (_tabId, tab) => wireTabForComunica(tab, engine, sourcesPromise));
+    yasgui.on('tabSelect', (_instance, tabId) => {
+      wireTabForComunica(yasgui.getTab(tabId), engine, sourcesPromise);
+    });
     wireTabForComunica(yasgui.getTab(), engine, sourcesPromise);
     await addExampleQueriesFromCatalog(yasgui, catalogUrl);
 

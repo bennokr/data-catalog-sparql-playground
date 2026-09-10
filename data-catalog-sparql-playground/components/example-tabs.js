@@ -12,11 +12,11 @@ export async function addExampleQueriesFromCatalog(yasgui, catalogUrl = 'catalog
     const name = (part.name || new URL(url, window.location.href).pathname.split('/').pop()).trim();
     if (yasgui.tabNameTaken(name)) continue;
 
-    const tab = yasgui.addTab(true);
+    const tab = yasgui.addTab(false);
     tab.setName(name);
-    tab.show();
+    tab.select();
     tab.getYasqe?.().setValue(await fetch(absUrl(url)).then((response) => response.text()));
   }
 
-  activeTab?.show?.();
+  activeTab?.select?.();
 }

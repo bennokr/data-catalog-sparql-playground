@@ -30,6 +30,27 @@ test.describe('SPARQL playground UI', () => {
     await expect(page.getByRole('tab', { name: 'Library JSON-LD' })).toBeVisible();
   });
 
+  test('shows one query editor while switching, adding, and restoring tabs', async ({ page }) => {
+    await page.goto('/query.html');
+    const activePanels = page.locator('.tabPanel.active');
+    const selectedTabs = page.locator('[role="tab"][aria-selected="true"]');
+
+    await expect(activePanels).toHaveCount(1);
+    await expect(selectedTabs).toHaveCount(1);
+
+    await openNamedTab(page, 'List things');
+    await expect(activePanels).toHaveCount(1);
+    await expect(selectedTabs).toHaveCount(1);
+
+    await page.getByRole('button', { name: 'Add a new tab' }).click();
+    await expect(activePanels).toHaveCount(1);
+    await expect(selectedTabs).toHaveCount(1);
+
+    await page.reload();
+    await expect(activePanels).toHaveCount(1);
+    await expect(selectedTabs).toHaveCount(1);
+  });
+
   test('scopes cached tabs to the deployed catalog path', async ({ page }) => {
     await page.goto('/query.html');
     await page.waitForFunction(() => {
