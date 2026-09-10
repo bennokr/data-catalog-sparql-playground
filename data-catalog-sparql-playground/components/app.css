@@ -32,18 +32,9 @@ playground-page,
 .playground-header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: start;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.eyebrow {
-  margin: 0 0 0.35rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #4169e1;
 }
 
 h1 {
@@ -53,23 +44,27 @@ h1 {
 
 .playground-copy,
 .playground-status {
-  margin: 0.5rem 0 0;
   color: #48627d;
 }
 
+.playground-copy {
+  margin: 0.4rem 0 0;
+}
+
 .playground-status {
-  max-width: 22rem;
-  padding: 0.75rem 0.9rem;
+  margin: 0.15rem 0 0;
+  padding: 0.35rem 0.65rem;
   border: 1px solid #d7e1f3;
-  border-radius: 0.9rem;
-  background: rgba(255,255,255,0.75);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.8);
+  white-space: nowrap;
 }
 
 .yasgui-host {
   min-height: 0;
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   overflow: hidden;
-  box-shadow: 0 16px 45px rgba(30, 64, 175, 0.08);
+  box-shadow: 0 12px 32px rgba(30, 64, 175, 0.08);
 }
 
 .yasgui-host,
@@ -94,6 +89,22 @@ h1 {
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-left-color: rgba(255, 255, 255, 0.2);
   animation: yasqe-spin 1s linear infinite;
+}
+
+@media (max-width: 640px) {
+  .playground-shell {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .playground-header {
+    display: block;
+  }
+
+  .playground-status {
+    display: inline-block;
+    margin-top: 0.65rem;
+  }
 }
 
 @keyframes yasqe-spin {

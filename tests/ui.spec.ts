@@ -28,10 +28,12 @@ test.describe('SPARQL playground UI', () => {
     await expect(page.getByRole('tabpanel', { name: 'Query' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Query' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('tab', { name: 'Library JSON-LD' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Ready');
   });
 
   test('shows one query editor while switching, adding, and restoring tabs', async ({ page }) => {
     await page.goto('/query.html');
+    await expect(page.getByRole('status')).toHaveText('Ready');
     const activePanels = page.locator('.tabPanel.active');
     const selectedTabs = page.locator('[role="tab"][aria-selected="true"]');
 
@@ -49,6 +51,21 @@ test.describe('SPARQL playground UI', () => {
     await page.reload();
     await expect(activePanels).toHaveCount(1);
     await expect(selectedTabs).toHaveCount(1);
+
+    await openNamedTab(page, 'Grid view');
+    const restoredPanel = await runQueryInTab(page, 'Grid view');
+    await expect(restoredPanel.locator('.yasr_response_chip')).toContainText('4 results');
+    await expect(activePanels).toHaveCount(1);
+  });
+
+  test('keeps the minimal playground usable on a narrow screen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/minimal.html');
+
+    await expect(page.getByRole('heading', { name: 'SPARQL playground' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Ready');
+    await expect(page.locator('.tabPanel.active')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Run query' }).first()).toBeVisible();
   });
 
   test('scopes cached tabs to the deployed catalog path', async ({ page }) => {
@@ -123,7 +140,7 @@ test.describe('SPARQL playground UI', () => {
 
   test('minimal page runs queries with only standard result plugins and can switch result views', async ({ page }) => {
     await page.goto('/minimal.html');
-    await expect(page.getByText('Minimal demo ready with standard YASR result views.')).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Ready');
 
     const pluginOrder = await page.evaluate(() => window.Yasgui.Yasr.defaults.pluginOrder);
     expect(pluginOrder).not.toContain('Grid');
@@ -152,6 +169,8 @@ test.describe('SPARQL playground UI', () => {
 
   test('complex page supports tab switching and grid result view switching', async ({ page }) => {
     await page.goto('/query.html');
+
+    await expect(page.getByRole('button', { name: 'Shows Table view' })).toHaveCount(1);
 
     await openNamedTab(page, 'List things');
     await openNamedTab(page, 'Grid view');

@@ -9,6 +9,7 @@ import html
 import json
 import mimetypes
 from pathlib import Path
+import re
 import shutil
 from typing import Iterable
 
@@ -131,15 +132,29 @@ def _copy_inputs(paths: Iterable[Path], destination: Path) -> list[Path]:
     return deployed
 
 
-def _set_page_title(page: Path, title: str) -> None:
+def _set_page_copy(page: Path, title: str, tagline: str) -> None:
     text = page.read_text(encoding="utf-8")
-    escaped = html.escape(title, quote=True)
-    text = text.replace("<title>Minimal SPARQL playground</title>", f"<title>{escaped}</title>")
-    text = text.replace("<title>SPARQL playground</title>", f"<title>{escaped}</title>")
-    text = text.replace('page-title="Minimal SPARQL playground"', f'page-title="{escaped}"')
-    text = text.replace('page-title="SPARQL playground"', f'page-title="{escaped}"')
-    text = text.replace('title="Minimal SPARQL playground"', f'title="{escaped}"')
-    text = text.replace('title="Complex SPARQL playground"', f'title="{escaped}"')
+    escaped_title = html.escape(title, quote=True)
+    escaped_tagline = html.escape(tagline, quote=True)
+    text = re.sub(r"<title>.*?</title>", f"<title>{escaped_title}</title>", text, count=1)
+    text = re.sub(
+        r'(<playground-page\b[^>]*\bpage-title=")[^"]*(")',
+        rf'\g<1>{escaped_title}\g<2>',
+        text,
+        count=1,
+    )
+    text = re.sub(
+        r'(<yasgui-playground\b[^>]*\btitle=")[^"]*(")',
+        rf'\g<1>{escaped_title}\g<2>',
+        text,
+        count=1,
+    )
+    text = re.sub(
+        r'(<yasgui-playground\b[^>]*\bdescription=")[^"]*(")',
+        rf'\g<1>{escaped_tagline}\g<2>',
+        text,
+        count=1,
+    )
     page.write_text(text, encoding="utf-8")
 
 
@@ -151,6 +166,7 @@ def build_site(
     template: Path | None = None,
     output: Path = Path("_site"),
     name: str = "SPARQL playground",
+    tagline: str = "Explore RDF data with SPARQL in your browser.",
     base_url: str = "./",
     license: str | None = None,
     variant: str = "minimal",
@@ -178,7 +194,7 @@ def build_site(
 
     page_name = "minimal.html" if variant == "minimal" else "query.html"
     shutil.copy2(output / page_name, output / "index.html")
-    _set_page_title(output / "index.html", name)
+    _set_page_copy(output / "index.html", name, tagline)
     (output / "minimal.html").unlink(missing_ok=True)
     (output / "query.html").unlink(missing_ok=True)
     if variant == "minimal":
@@ -217,6 +233,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--template", type=Path)
     build.add_argument("--output", type=Path, default=Path("_site"))
     build.add_argument("--name", default="SPARQL playground")
+    build.add_argument("--tagline", default="Explore RDF data with SPARQL in your browser.")
     build.add_argument("--base-url", default="./")
     build.add_argument("--license")
     build.add_argument("--variant", choices=("minimal", "advanced"), default="minimal")
@@ -242,6 +259,7 @@ def main(argv: list[str] | None = None) -> None:
         template=args.template,
         output=args.output,
         name=args.name,
+        tagline=args.tagline,
         base_url=args.base_url,
         license=args.license,
         variant=args.variant,

@@ -16,7 +16,7 @@ The static HTML entry pages currently provide these globals before `components/b
 - `catalog-url` — optional catalog path, defaults to `catalog.json`
 - `persistence-id` — optional YASGUI browser-storage key; by default, the resolved catalog path keeps cached tabs separate between deployments
 - `data-special-views="false"` — disables the Sparnatural result plugins and keeps standard YASR views only
-- `title`, `eyebrow`, `description` — page copy rendered in the shell header
+- `title`, `description` — page title and tagline rendered in the shell header
 
 ## Expected side effects
 The current implementation intentionally exposes a small amount of runtime state on `window` for browser-driven debugging and tests:
@@ -33,6 +33,7 @@ The custom element also exposes its resolved `persistenceId` after initializatio
 - Example SPARQL queries from the catalog are auto-added as tabs.
 - The originally active tab is restored after auto-adding example-query tabs.
 - Only the selected tab's query editor and results are visible.
+- The advanced page presents one control for each result view.
 - Cached tabs are scoped to the resolved catalog path, so separate GitHub Pages projects on the same origin do not share them.
 
 ## If you change this contract

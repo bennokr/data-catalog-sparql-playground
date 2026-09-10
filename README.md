@@ -32,6 +32,7 @@ jobs:
       data: demo/*.trig
       queries: demo/*.rq
       title: My SPARQL playground
+      tagline: Explore this project's RDF data in your browser.
       playground-ref: WORKFLOW_COMMIT
 ```
 
@@ -39,7 +40,7 @@ In the consumer repository's Pages settings, select **GitHub Actions** as the
 deployment source. The workflow accepts newline-separated glob patterns and
 defaults to the minimal interface. Minimal builds omit the advanced page and
 result-plugin bundle. Set `variant: advanced` to include the Grid, Stats, and Map
-result views.
+result views. Set `title` and `tagline` to give each deployed site its own copy.
 
 `WORKFLOW_COMMIT` should be the same release tag or commit SHA in both places.
 This pins the reusable workflow and the playground assets it deploys.
@@ -53,6 +54,7 @@ python make_catalog.py build \
   --data "data-catalog-sparql-playground/data/*" \
   --queries "data-catalog-sparql-playground/queries/*" \
   --name "Data Catalog SPARQL playground" \
+  --tagline "Explore catalog-managed RDF data with SPARQL in your browser." \
   --variant advanced \
   --output _site
 

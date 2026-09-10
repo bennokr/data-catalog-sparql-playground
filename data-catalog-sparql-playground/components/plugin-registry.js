@@ -15,6 +15,8 @@ export function registerYasrPlugins({ includeSparnaturalPlugins }) {
   Yasr.registerPlugin('Map', window.SparnaturalYasguiPlugins.MapPlugin);
 
   const customNames = ['TableX', 'Grid', 'Stats', 'Map'];
-  Yasr.defaults.pluginOrder = customNames.concat(baseOrder.filter((name) => !customNames.includes(name)));
+  Yasr.defaults.pluginOrder = customNames.concat(
+    baseOrder.filter((name) => name !== 'table' && !customNames.includes(name)),
+  );
   Yasr.defaults.defaultPlugin = 'TableX';
 }

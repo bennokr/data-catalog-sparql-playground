@@ -48,7 +48,10 @@ class MakeCatalogTests(unittest.TestCase):
             )
             template.mkdir()
             (template / "minimal.html").write_text(
-                "<title>Minimal SPARQL playground</title>",
+                '<title>SPARQL playground</title>\n'
+                '<playground-page page-title="SPARQL playground">\n'
+                '<yasgui-playground title="SPARQL playground" '
+                'description="Explore RDF data with SPARQL in your browser.">',
                 encoding="utf-8",
             )
             (template / "query.html").write_text(
@@ -71,6 +74,7 @@ class MakeCatalogTests(unittest.TestCase):
                 template=template,
                 output=output,
                 name="Consumer demo",
+                tagline="Inspect this consumer's RDF data.",
             )
 
             self.assertTrue((output / "index.html").is_file())
@@ -78,6 +82,11 @@ class MakeCatalogTests(unittest.TestCase):
             self.assertFalse((output / "minimal.html").exists())
             self.assertFalse((output / "query.html").exists())
             self.assertFalse((output / "sparnatural-yasgui-plugins.js").exists())
+            page = (output / "index.html").read_text(encoding="utf-8")
+            self.assertIn("<title>Consumer demo</title>", page)
+            self.assertIn('page-title="Consumer demo"', page)
+            self.assertIn('title="Consumer demo"', page)
+            self.assertIn('description="Inspect this consumer&#x27;s RDF data."', page)
             self.assertTrue((output / "data" / "graph.trig").is_file())
             self.assertFalse((output / "data" / "bundled.ttl").exists())
             document = json.loads((output / "catalog.json").read_text())

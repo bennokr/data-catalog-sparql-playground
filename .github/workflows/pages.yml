@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: SPARQL playground
+      tagline:
+        description: Short sentence shown below the site title
+        required: false
+        type: string
+        default: Explore RDF data with SPARQL in your browser.
       variant:
         description: Interface variant
         required: false
@@ -82,12 +87,14 @@ jobs:
           DATA_INPUT: ${{ inputs.data }}
           QUERY_INPUT: ${{ inputs.queries }}
           TITLE_INPUT: ${{ inputs.title }}
+          TAGLINE_INPUT: ${{ inputs.tagline }}
           VARIANT_INPUT: ${{ inputs.variant }}
         run: |
           if [[ "$GITHUB_REPOSITORY" == "bennokr/data-catalog-sparql-playground" && -z "$DATA_INPUT" ]]; then
             DATA_INPUT="data-catalog-sparql-playground/data/*"
             QUERY_INPUT="data-catalog-sparql-playground/queries/*"
             TITLE_INPUT="Data Catalog SPARQL playground"
+            TAGLINE_INPUT="Explore catalog-managed RDF data with SPARQL in your browser."
             VARIANT_INPUT="advanced"
           fi
           {
@@ -98,6 +105,7 @@ jobs:
             echo "$QUERY_INPUT"
             echo "EOF"
             echo "title=${TITLE_INPUT:-SPARQL playground}"
+            echo "tagline=${TAGLINE_INPUT:-Explore RDF data with SPARQL in your browser.}"
             echo "variant=${VARIANT_INPUT:-minimal}"
           } >> "$GITHUB_OUTPUT"
 
@@ -107,6 +115,7 @@ jobs:
           data: ${{ steps.inputs.outputs.data }}
           queries: ${{ steps.inputs.outputs.queries }}
           title: ${{ steps.inputs.outputs.title }}
+          tagline: ${{ steps.inputs.outputs.tagline }}
           variant: ${{ steps.inputs.outputs.variant }}
           output: _site
           source-root: consumer

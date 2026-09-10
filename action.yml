@@ -13,6 +13,10 @@ inputs:
     description: Site and catalog title
     required: false
     default: SPARQL playground
+  tagline:
+    description: Short sentence shown below the site title
+    required: false
+    default: Explore RDF data with SPARQL in your browser.
   variant:
     description: Interface variant, either minimal or advanced
     required: false
@@ -49,6 +53,7 @@ runs:
         PLAYGROUND_DATA: ${{ inputs.data }}
         PLAYGROUND_QUERIES: ${{ inputs.queries }}
         PLAYGROUND_TITLE: ${{ inputs.title }}
+        PLAYGROUND_TAGLINE: ${{ inputs.tagline }}
         PLAYGROUND_VARIANT: ${{ inputs.variant }}
         PLAYGROUND_OUTPUT: ${{ inputs.output }}
         PLAYGROUND_SOURCE_ROOT: ${{ inputs.source-root }}
@@ -76,6 +81,7 @@ runs:
           --template "$GITHUB_ACTION_PATH/data-catalog-sparql-playground"
           --output "$PLAYGROUND_OUTPUT"
           --name "$PLAYGROUND_TITLE"
+          --tagline "$PLAYGROUND_TAGLINE"
           --variant "$PLAYGROUND_VARIANT"
           --base-url "$PLAYGROUND_BASE_URL"
         )

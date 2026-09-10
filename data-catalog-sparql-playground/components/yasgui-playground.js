@@ -58,12 +58,7 @@ export class YasguiPlayground extends HTMLElement {
     wireTabForComunica(yasgui.getTab(), engine, sourcesPromise);
     await addExampleQueriesFromCatalog(yasgui, catalogUrl);
 
-    setPlaygroundStatus(
-      this,
-      this.dataset.specialViews === 'false'
-        ? 'Minimal demo ready with standard YASR result views.'
-        : 'Complex demo ready with table, grid, stats, and map result views.',
-    );
+    setPlaygroundStatus(this, 'Ready');
 
     this.persistenceId = persistenceId;
     this.yasgui = yasgui;
