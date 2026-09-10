@@ -32,6 +32,12 @@ test.describe('SPARQL playground UI', () => {
 
   test('scopes cached tabs to the deployed catalog path', async ({ page }) => {
     await page.goto('/query.html');
+    await page.waitForFunction(() => {
+      const playground = document.querySelector('yasgui-playground') as HTMLElement & {
+        persistenceId?: string;
+      };
+      return Boolean(playground?.persistenceId);
+    });
 
     const state = await page.evaluate(async () => {
       const { persistenceIdForCatalog } = await import(
