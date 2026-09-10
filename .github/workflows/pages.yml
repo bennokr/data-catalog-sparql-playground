@@ -1,0 +1,139 @@
+name: SPARQL playground Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      data:
+        description: Newline-separated RDF file patterns
+        required: false
+        type: string
+        default: "demo/*.trig"
+      queries:
+        description: Newline-separated SPARQL query patterns
+        required: false
+        type: string
+        default: "demo/*.rq"
+      title:
+        description: Site title
+        required: false
+        type: string
+        default: SPARQL playground
+      variant:
+        description: Interface variant
+        required: false
+        type: string
+        default: minimal
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out consumer
+        uses: actions/checkout@v7
+        with:
+          path: consumer
+
+      - name: Check out playground builder
+        uses: actions/checkout@v7
+        with:
+          repository: bennokr/data-catalog-sparql-playground
+          ref: ${{ github.repository == 'bennokr/data-catalog-sparql-playground' && github.sha || 'main' }}
+          path: playground
+
+      - name: Set up Node for playground self-tests
+        if: github.repository == 'bennokr/data-catalog-sparql-playground'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: playground/package-lock.json
+
+      - name: Run playground self-tests
+        if: github.repository == 'bennokr/data-catalog-sparql-playground'
+        working-directory: playground
+        run: |
+          python3 -m unittest tests/test_make_catalog.py
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run release:check
+
+      - name: Resolve build inputs
+        id: inputs
+        shell: bash
+        env:
+          DATA_INPUT: ${{ inputs.data }}
+          QUERY_INPUT: ${{ inputs.queries }}
+          TITLE_INPUT: ${{ inputs.title }}
+          VARIANT_INPUT: ${{ inputs.variant }}
+        run: |
+          if [[ "$GITHUB_REPOSITORY" == "bennokr/data-catalog-sparql-playground" && -z "$DATA_INPUT" ]]; then
+            DATA_INPUT="data-catalog-sparql-playground/data/*"
+            QUERY_INPUT="data-catalog-sparql-playground/queries/*"
+            TITLE_INPUT="Data Catalog SPARQL playground"
+            VARIANT_INPUT="advanced"
+          fi
+          {
+            echo "data<<EOF"
+            echo "$DATA_INPUT"
+            echo "EOF"
+            echo "queries<<EOF"
+            echo "$QUERY_INPUT"
+            echo "EOF"
+            echo "title=${TITLE_INPUT:-SPARQL playground}"
+            echo "variant=${VARIANT_INPUT:-minimal}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build site with the playground action
+        uses: ./playground
+        with:
+          data: ${{ steps.inputs.outputs.data }}
+          queries: ${{ steps.inputs.outputs.queries }}
+          title: ${{ steps.inputs.outputs.title }}
+          variant: ${{ steps.inputs.outputs.variant }}
+          output: _site
+          source-root: consumer
+
+      - name: Verify generated site
+        run: |
+          test -f _site/index.html
+          test -f _site/catalog.json
+          python3 -m json.tool _site/catalog.json > /dev/null
+
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

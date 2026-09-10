@@ -1,184 +1,97 @@
 # Data Catalog SPARQL playground
 
-A tiny, self-contained playground for browsing and querying RDF data in the browser:
+This project turns RDF files and example SPARQL queries into a static browser
+playground. Comunica runs every query in the browser, so the deployed site does
+not need a SPARQL endpoint or application server.
 
-- `make_catalog.py` generates a schema.org DataCatalog (JSON-LD) from your RDF files (and optional example SPARQL queries).
-- `query.html` loads that catalog, builds in-browser Comunica sources from the distributions, and provides a YASGUI workspace with auto-added example-query tabs.
-- `minimal.html` provides a second, stripped-down demo page that reuses the same web components without the special Sparnatural result plugins.
-- `run-server.sh` serves the site over HTTPS on port 443 (handy to mimic a GitHub Pages hostname locally).
-- `toggle-hosts.sh` toggles an /etc/hosts entry to map a chosen hostname (e.g., username.github.io) to localhost.
+[Open the live playground](https://bennokr.github.io/data-catalog-sparql-playground/)
 
-Everything runs in your browser; there’s no SPARQL endpoint. Comunica queries the RDF files directly.
+## Use it from another repository
 
-🚀 [**Live demo**](data-catalog-sparql-playground/query.html) 🚀
+The reusable workflow builds and deploys a complete GitHub Pages site. The
+consumer repository keeps only its RDF data, SPARQL queries, and this workflow
+call:
 
-## Repository layout
+```yaml
+name: SPARQL playground
 
-- `make_catalog.py` — CLI to build `catalog.json` from your data and queries
-- `data-catalog-sparql-playground/`:
-  - `query.html` — advanced YASGUI + Comunica demo with special Grid/Stats/Map result views
-  - `minimal.html` — minimal YASGUI + Comunica demo with standard YASR result views only
-  - `components/` — small web components plus focused helper modules for plugins, tabs, execution, and shell rendering
-  - `docs/` — implementation plans and design notes
-  - `data/` — put your RDF files here (e.g., .ttl, .trig, .jsonld, .json with JSON-LD, …)
-  - `queries/` — put example SPARQL files here (e.g., .rq, .sparql)
-- `run-server.sh` — HTTPS static server (uses npx http-server)
-- `toggle-hosts.sh` — Toggle /etc/hosts for a local GitHub Pages-like hostname
+on:
+  push:
+    branches:
+      - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-## Prerequisites
-
-- Python 3.8+ and pip
-- Node.js (to run npx http-server)
-- mkcert (to create a locally trusted dev certificate)
-- macOS or Linux shell (scripts assume a POSIX shell)
-
-
-## Installation
-
-macOS (Homebrew):
-
-```
-brew install mkcert
-brew install nss        # if you use Firefox
-mkcert -install         # installs a local CA into your trust stores
+jobs:
+  pages:
+    uses: bennokr/data-catalog-sparql-playground/.github/workflows/pages.yml@main
+    with:
+      data: demo/*.trig
+      queries: demo/*.rq
+      title: My SPARQL playground
 ```
 
-Linux (Debian/Ubuntu):
+In the consumer repository's Pages settings, select **GitHub Actions** as the
+deployment source. The workflow accepts newline-separated glob patterns and
+defaults to the minimal interface. Set `variant: advanced` to include the Grid,
+Stats, and Map result views.
 
-```
-sudo apt-get update
-sudo apt-get install -y mkcert libnss3-tools
-mkcert -install
-```
+For a stable consumer integration, pin the workflow to a release tag or commit
+SHA after the interface has been tagged.
 
-### Notes
-- `mkcert -install` adds a local CA to your system trust store (and to NSS for Firefox via libnss3-tools).
+## Build locally
 
+The builder uses only the Python standard library:
 
-## Generate a local HTTPS cert
+```bash
+python make_catalog.py build \
+  --data "data-catalog-sparql-playground/data/*" \
+  --queries "data-catalog-sparql-playground/queries/*" \
+  --name "Data Catalog SPARQL playground" \
+  --variant advanced \
+  --output _site
 
-Replace USER.github.io with the hostname you want to mimic (e.g., your GitHub Pages domain). Include localhost and loopback IPs as SANs.
-
-```
-mkcert -key-file cert-key.pem -cert-file cert.pem "USER.github.io" localhost 127.0.0.1 ::1
-```
-
-This produces cert.pem and cert-key.pem in the repo root. Keep cert-key.pem private.
-
-
-## Create your catalog.json
-
-1) Install the Python dependency:
-
-```
-python3 -m venv .venv
-. .venv/bin/activate
-pip install defopt
+python -m http.server --directory _site 8000
 ```
 
-2) Put RDF data under data/ and example queries under queries/.
+Open <http://localhost:8000/>.
 
-3) Generate catalog.json (adjust base URL, name, license as needed):
+To generate only a schema.org DataCatalog:
 
-```
-python make_catalog.py data/* \
-  --base-url https://USER.github.io/ \
+```bash
+python make_catalog.py catalog data/*.ttl \
+  --queries queries/*.rq \
   --name "My data catalog" \
-  --queries queries/* \
   --out catalog.json
 ```
 
-### Notes
+## Development
 
-- `base-url` should be the public URL where these files would be hosted (e.g., GitHub Pages root). The tool keeps your relative paths intact and prefixes them with `base-url` for contentUrl.
-- Supported RDF types are auto-guessed: `.ttl`, `.trig`, `.nt`, `.nq`, `.jsonld`, `.json` (treated as JSON-LD), `.rdf`/`.xml`, plus SPARQL queries (`.rq`/`.sparql`).
-- A --license URL can be added to all datasets.
-- Example queries are added as SoftwareSourceCode entries and will appear as YASGUI tabs automatically in query.html.
+The browser runtime lives in `data-catalog-sparql-playground/`. Production
+JavaScript dependencies are kept there so consumers do not need Node or frontend
+build tooling. Node is used only for the project's Playwright tests.
 
-
-## Run locally over HTTPS on port 443
-
-Map your chosen hostname to localhost (toggle on/off):
-
-```
-./toggle-hosts.sh USER.github.io
+```bash
+python -m unittest tests/test_make_catalog.py
+npm ci
+npx playwright install chromium
+npm run release:check
 ```
 
-Start the HTTPS server (binds to 443; will prompt for sudo):
+The Pages workflow runs these checks, builds the site through the same reusable
+interface offered to consumers, and deploys the resulting artifact after a
+successful build.
 
-```
-./run-server.sh
-```
+## Runtime
 
-Open in your browser:
+- `minimal.html` uses standard YASR result views.
+- `query.html` adds Grid, Stats, and Map result views.
+- `catalog.json` describes RDF distributions and example queries.
+- `components/` contains the browser components.
+- `vendor/` contains the production browser bundles used by the generated site.
 
-```
-https://USER.github.io/query.html
-```
-
-Why mimic a Pages-like hostname?
-- Your catalog.json’s contentUrl values will resolve exactly as they would on GitHub Pages.
-- Avoids cross-origin quirks by keeping everything “same-origin” while developing.
-
-
-## Using the playground
-
-- `query.html` reads `./catalog.json` by default and enables special Grid, Stats, and Map result plugins when query comments request them.
-- `minimal.html` reads the same catalog but keeps YASR on its standard built-in result views for a smaller demo surface, even when example queries contain special view hints.
-- Datasets with RDF distributions become Comunica sources.
-- Example queries (from catalog `hasPart SoftwareSourceCode` with SPARQL media) are added as tabs.
-- Click Run or press Cmd/Ctrl-Enter to execute queries in the browser.
-- No network endpoint is used; a dummy endpoint is configured only to satisfy YASGUI’s UI. Comunica reads your files directly.
-
-
-## Updating data and queries
-
-- Add/modify files under data/ and queries/.
-- Re-run make_catalog.py to regenerate catalog.json.
-- Refresh the browser; new sources and example tabs appear.
-
-
-
-## Architecture and maintenance notes
-
-If you are working on the playground internals rather than just using the demo pages, start with:
-
-- `data-catalog-sparql-playground/docs/architecture-notes.md` for a short architecture walkthrough, a design critique of the current component split, and suggested follow-up improvements.
-- `data-catalog-sparql-playground/docs/runtime-contract.md` for the browser/runtime contract of `<yasgui-playground>`.
-- `data-catalog-sparql-playground/docs/release-checklist.md` for the release checklist and verification flow.
-- `data-catalog-sparql-playground/docs/vega-lite-plan.md` for the planned next visualization result type.
-
-## Troubleshooting
-
-- Browser distrusts the cert:
-  - Ensure mkcert -install was run.
-  - For Firefox, ensure it uses the OS trust store (about:config → security.enterprise_roots.enabled = true) or let mkcert install into NSS (libnss3-tools).
-- Port 443 already in use:
-  - Stop the other service or edit run-server.sh to use a different port (you’ll also need to adjust how you access the site; same-origin assumptions may change).
-- No data shows in queries:
-  - Check catalog.json: distribution[].contentUrl must be reachable and point to RDF files. Media types are optional but recommended; unsupported formats are ignored.
-- Example tabs don’t appear:
-  - Ensure queries are listed via --queries when generating the catalog and detected as SPARQL (file extension .rq/.sparql or encodingFormat application/sparql-query).
-
-## Deploying to GitHub Pages
-
-- Commit catalog.json, query.html, data/, and queries/ to your Pages branch.
-- Set base-url to your real Pages URL when generating the catalog.
-- Then open https://USER.github.io/query.html and query away—no server needed.
-
-
-
-## Release readiness
-
-- The advanced and minimal demos are covered by Playwright UI tests, including tab switching and result-view switching.
-- `npm run release:check` runs the release verification path through the red/green harness.
-- Internal architecture, runtime expectations, and release steps are documented under `data-catalog-sparql-playground/docs/`.
-- Screenshot artifacts under `artifacts/` capture the current advanced and minimal demo surfaces for review.
-
-## Test and debug harness (red/green TDD)
-
-- `./scripts/playwright-harness.sh red` runs the fast unit checks first (red phase).
-- `./scripts/playwright-harness.sh green` runs unit checks and then Playwright browser tests (green phase).
-- `./scripts/playwright-harness.sh ui` opens Playwright in UI/debug mode.
-- `./scripts/rodney-help.sh` runs `uvx rodney --help` when `uvx` is available.
+The generated site uses relative URLs, so it works at a GitHub Pages project path
+without repository-specific configuration.

@@ -1,138 +1,248 @@
 #!/usr/bin/env python3
-"""
-Generate a schema.org DataCatalog (JSON-LD) for a list of files.
-
-Usage (defopt parses the function signature):
-  python make_catalog.py data/*.ttl --base-url https://example.org/ --name "My data catalog" --queries queries/*
-"""
+"""Build static, in-browser SPARQL playground sites."""
 
 from __future__ import annotations
+
+import argparse
+import glob
+import html
 import json
 import mimetypes
 from pathlib import Path
-from typing import Iterable, Optional
-import defopt
+import shutil
+from typing import Iterable
 
-# Minimal RDF-focused media type fixes
+
 _RDF_TYPES = {
-    ".ttl":  "text/turtle",
+    ".ttl": "text/turtle",
     ".trig": "application/trig",
-    ".nt":   "application/n-triples",
-    ".nq":   "application/n-quads",
+    ".nt": "application/n-triples",
+    ".nq": "application/n-quads",
     ".jsonld": "application/ld+json",
     ".json": "application/ld+json",
-    ".rdf":  "application/rdf+xml",
-    ".xml":  "application/rdf+xml",
+    ".rdf": "application/rdf+xml",
+    ".xml": "application/rdf+xml",
     ".rq": "application/sparql-query",
     ".sparql": "application/sparql-query",
 }
 
-def _guess_media_type(p: Path) -> str:
-    ext = p.suffix.lower()
-    if ext in _RDF_TYPES:
-        return _RDF_TYPES[ext]
-    mt, _ = mimetypes.guess_type(p.name)
-    return mt or "application/octet-stream"
+
+def _guess_media_type(path: Path) -> str:
+    if path.suffix.lower() in _RDF_TYPES:
+        return _RDF_TYPES[path.suffix.lower()]
+    media_type, _ = mimetypes.guess_type(path.name)
+    return media_type or "application/octet-stream"
+
 
 def _rel_url(base_url: str, file_path: Path) -> str:
-    # Join base_url with a POSIX-style relative path
-    rel = file_path.as_posix()
-    if not base_url.endswith("/"):
-        base_url += "/"
-    return base_url + rel
+    relative = file_path.as_posix().lstrip("/")
+    if base_url in {"", ".", "./"}:
+        return f"./{relative}"
+    return f"{base_url.rstrip('/')}/{relative}"
+
 
 def catalog(
     *files: Path,
     base_url: str,
     name: str,
-    out: Optional[Path] = None,
-    license: Optional[str] = None,
-    queries: Optional[Iterable[Path]] = None,
-    copy_ui: bool = False,
-) -> None:
-    """
-    Create a JSON-LD DataCatalog from file paths.
-
-    :param files: One or more file paths (relative paths are kept in URLs).
-    :param base_url: Base URL where the files are hosted (e.g., https://user.github.io/repo/).
-    :param name: Human-readable catalog name.
-    :param out: Output file path (default: stdout).
-    :param license: Optional license URL to apply to all datasets.
-    :param queries: One or more sparql query file paths (relative paths are kept in URLs).
-    :param copy_ui: Whether to copy query.html into the current directory or the parent directory of out.
-    """
+    out: Path | None = None,
+    license: str | None = None,
+    queries: Iterable[Path] | None = None,
+) -> dict:
+    """Create a schema.org DataCatalog for RDF files and example queries."""
     if not files:
-        raise SystemExit("No input files provided.")
+        raise ValueError("At least one RDF data file is required")
 
     datasets = []
-    for fp in files:
-        p = Path(fp)
-        identifier = p.stem
-        media = _guess_media_type(p)
-        content_url = _rel_url(base_url, p)
-
-        ds = {
+    for path in map(Path, files):
+        dataset = {
             "@type": "Dataset",
-            "name": identifier,
-            "identifier": identifier,
-            "distribution": [{
-                "@type": "DataDownload",
-                "encodingFormat": media,
-                "contentUrl": content_url,
-            }],
+            "name": path.stem,
+            "identifier": path.stem,
+            "distribution": [
+                {
+                    "@type": "DataDownload",
+                    "encodingFormat": _guess_media_type(path),
+                    "contentUrl": _rel_url(base_url, path),
+                }
+            ],
         }
         if license:
-            ds["license"] = license
-        datasets.append(ds)
+            dataset["license"] = license
+        datasets.append(dataset)
 
-    # Build hasPart for queries
-    has_part = []
-    for q in (queries or []):
-        q = Path(q)
-        media = _guess_media_type(q)
-        if media != "application/sparql-query":
+    parts = []
+    for path in map(Path, queries or []):
+        if _guess_media_type(path) != "application/sparql-query":
             continue
-        has_part.append({
-            "@type": "SoftwareSourceCode",
-            "name": q.stem.replace("_", " "),
-            "programmingLanguage": "SPARQL",
-            "encodingFormat": media,
-            "contentUrl": _rel_url(base_url, q),
-        })
+        parts.append(
+            {
+                "@type": "SoftwareSourceCode",
+                "name": path.stem.replace("_", " ").replace("-", " "),
+                "programmingLanguage": "SPARQL",
+                "encodingFormat": "application/sparql-query",
+                "contentUrl": _rel_url(base_url, path),
+            }
+        )
 
-    catalog = {
+    document = {
         "@context": "https://schema.org",
         "@type": "DataCatalog",
         "name": name,
         "url": base_url,
         "dataset": datasets,
     }
-    if has_part:
-        catalog["hasPart"] = has_part
+    if parts:
+        document["hasPart"] = parts
 
-    text = json.dumps(catalog, indent=2, ensure_ascii=False)
+    text = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
     if out:
+        out = Path(out)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text, encoding="utf-8")
     else:
-        print(text)
+        print(text, end="")
+    return document
 
-    if copy_ui:
-        import shutil, sys
 
-        dest: str = "query.html"
-        if out:
-            out = Path(out).parent / dest
-        if not src:
-            candidate = Path(__file__).with_name("query.html")
-            if candidate.exists():
-                src = candidate
+def _expand(patterns: Iterable[str], root: Path) -> list[Path]:
+    matches: list[Path] = []
+    seen: set[Path] = set()
+    for pattern in patterns:
+        for match in sorted(glob.glob(str(root / pattern), recursive=True)):
+            path = Path(match).resolve()
+            if path.is_file() and path not in seen:
+                matches.append(path)
+                seen.add(path)
+    return matches
 
-        if not src or not src.exists():
-            raise SystemExit("query.html not found in source tree")
 
-        shutil.copyfile(src, dest)
-        print(f"Copied {src} -> {dest}", file=sys.stderr)
+def _copy_inputs(paths: Iterable[Path], destination: Path) -> list[Path]:
+    destination.mkdir(parents=True, exist_ok=True)
+    deployed: list[Path] = []
+    names: set[str] = set()
+    for source in paths:
+        if source.name in names:
+            raise ValueError(f"Duplicate input filename: {source.name}")
+        names.add(source.name)
+        target = destination / source.name
+        shutil.copy2(source, target)
+        deployed.append(Path(destination.name) / target.name)
+    return deployed
+
+
+def _set_page_title(page: Path, title: str) -> None:
+    text = page.read_text(encoding="utf-8")
+    escaped = html.escape(title, quote=True)
+    text = text.replace("<title>Minimal SPARQL playground</title>", f"<title>{escaped}</title>")
+    text = text.replace("<title>SPARQL playground</title>", f"<title>{escaped}</title>")
+    text = text.replace('page-title="Minimal SPARQL playground"', f'page-title="{escaped}"')
+    text = text.replace('page-title="SPARQL playground"', f'page-title="{escaped}"')
+    text = text.replace('title="Minimal SPARQL playground"', f'title="{escaped}"')
+    text = text.replace('title="Complex SPARQL playground"', f'title="{escaped}"')
+    page.write_text(text, encoding="utf-8")
+
+
+def build_site(
+    *,
+    data_patterns: Iterable[str],
+    query_patterns: Iterable[str] = (),
+    source_root: Path = Path("."),
+    template: Path | None = None,
+    output: Path = Path("_site"),
+    name: str = "SPARQL playground",
+    base_url: str = "./",
+    license: str | None = None,
+    variant: str = "minimal",
+) -> Path:
+    """Build a complete static site from a consumer's RDF and query files."""
+    source_root = Path(source_root).resolve()
+    template = Path(template or Path(__file__).with_name("data-catalog-sparql-playground")).resolve()
+    output = Path(output).resolve()
+
+    if output == template or template in output.parents:
+        raise ValueError("Output must be outside the playground template")
+
+    data_files = _expand(data_patterns, source_root)
+    query_files = _expand(query_patterns, source_root)
+    if not data_files:
+        raise ValueError("No RDF data files matched the supplied patterns")
+
+    if output.exists():
+        shutil.rmtree(output)
+    shutil.copytree(
+        template,
+        output,
+        ignore=shutil.ignore_patterns("catalog.json", "data", "queries", "docs"),
+    )
+
+    page_name = "minimal.html" if variant == "minimal" else "query.html"
+    shutil.copy2(output / page_name, output / "index.html")
+    _set_page_title(output / "index.html", name)
+    (output / ".nojekyll").write_text("", encoding="utf-8")
+
+    deployed_data = _copy_inputs(data_files, output / "data")
+    deployed_queries = _copy_inputs(query_files, output / "queries")
+    catalog(
+        *deployed_data,
+        base_url=base_url,
+        name=name,
+        out=output / "catalog.json",
+        license=license,
+        queries=deployed_queries,
+    )
+    return output
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subcommands = parser.add_subparsers(dest="command", required=True)
+
+    generate = subcommands.add_parser("catalog", help="generate catalog.json")
+    generate.add_argument("files", nargs="+", type=Path)
+    generate.add_argument("--queries", nargs="*", type=Path, default=[])
+    generate.add_argument("--base-url", default="./")
+    generate.add_argument("--name", required=True)
+    generate.add_argument("--out", type=Path)
+    generate.add_argument("--license")
+
+    build = subcommands.add_parser("build", help="build a deployable static site")
+    build.add_argument("--data", action="append", required=True, dest="data_patterns")
+    build.add_argument("--queries", action="append", default=[], dest="query_patterns")
+    build.add_argument("--source-root", type=Path, default=Path("."))
+    build.add_argument("--template", type=Path)
+    build.add_argument("--output", type=Path, default=Path("_site"))
+    build.add_argument("--name", default="SPARQL playground")
+    build.add_argument("--base-url", default="./")
+    build.add_argument("--license")
+    build.add_argument("--variant", choices=("minimal", "advanced"), default="minimal")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = _parser().parse_args(argv)
+    if args.command == "catalog":
+        catalog(
+            *args.files,
+            queries=args.queries,
+            base_url=args.base_url,
+            name=args.name,
+            out=args.out,
+            license=args.license,
+        )
+        return
+    build_site(
+        data_patterns=args.data_patterns,
+        query_patterns=args.query_patterns,
+        source_root=args.source_root,
+        template=args.template,
+        output=args.output,
+        name=args.name,
+        base_url=args.base_url,
+        license=args.license,
+        variant=args.variant,
+    )
+
 
 if __name__ == "__main__":
-    defopt.run(catalog)
+    main()
