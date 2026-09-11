@@ -58,6 +58,19 @@ test.describe('SPARQL playground UI', () => {
     await expect(activePanels).toHaveCount(1);
   });
 
+  test('keeps one active editor after running a query and returning to its tab', async ({ page }) => {
+    await page.goto('/minimal.html');
+    await expect(page.getByRole('status')).toHaveText('Ready');
+
+    const queryPanel = await runQueryInTab(page, 'Query');
+    await openNamedTab(page, 'Grid view');
+    await openNamedTab(page, 'Query');
+
+    await expect(page.locator('.tabPanel.active')).toHaveCount(1);
+    await expect(queryPanel.locator('.yasqe > .CodeMirror')).toHaveCount(1);
+    await expect(queryPanel).toBeVisible();
+  });
+
   test('keeps the minimal playground usable on a narrow screen', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/minimal.html');
