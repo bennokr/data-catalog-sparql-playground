@@ -11,7 +11,6 @@ function readStreamToString(stream) {
 
 function applyPluginConfiguration(yasr, pluginName, payload, mediaType, options) {
   if (!pluginName || !yasr.plugins?.[pluginName]) {
-    yasr.drawnPlugin = yasr.getSelectedPlugin ? yasr.getSelectedPlugin() : null;
     return;
   }
 
