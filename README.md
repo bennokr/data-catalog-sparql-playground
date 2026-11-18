@@ -95,6 +95,7 @@ successful build.
 - `query.html` adds Grid, Stats, and Map result views.
 - `catalog.json` describes RDF distributions and example queries.
 - `components/` contains the browser components.
+- All RDF distributions are queried as one merged graph, so a triple stated in several files is returned once; a source that fails to load is listed on the page and the others still work. Set `data-merge-sources="false"` on `<yasgui-playground>` to federate instead (see `data-catalog-sparql-playground/docs/runtime-contract.md`).
 - `vendor/` contains the production browser bundles used by the generated site.
 
 The generated site uses relative URLs, so it works at a GitHub Pages project path

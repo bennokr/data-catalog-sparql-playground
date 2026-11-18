@@ -151,6 +151,67 @@ test.describe('SPARQL playground UI', () => {
     expect(names).toContain('JSON source wired through local @context');
   });
 
+  const FIXTURE_CATALOG = {
+    '@context': 'https://schema.org/',
+    '@type': 'DataCatalog',
+    name: 'Merge fixtures',
+    dataset: [
+      { '@type': 'Dataset', name: 'a', distribution: [{ '@type': 'DataDownload', contentUrl: 'fx/a.ttl', encodingFormat: 'text/turtle' }] },
+      { '@type': 'Dataset', name: 'b', distribution: [{ '@type': 'DataDownload', contentUrl: 'fx/b.ttl', encodingFormat: 'text/turtle' }] },
+      { '@type': 'Dataset', name: 'c', distribution: [{ '@type': 'DataDownload', contentUrl: 'fx/gone.json', encodingFormat: 'application/ld+json' }] },
+    ],
+  };
+  const SHARED = '<http://example.org/x> <http://example.org/p> "same" .\n';
+
+  async function routeFixtures(page) {
+    await page.route('**/fx/catalog.json', (route) => route.fulfill({ json: FIXTURE_CATALOG }));
+    await page.route('**/fx/a.ttl', (route) => route.fulfill({ contentType: 'text/turtle', body: SHARED + '<http://example.org/x> <http://example.org/q> "only-a" .\n' }));
+    await page.route('**/fx/b.ttl', (route) => route.fulfill({ contentType: 'text/turtle', body: SHARED }));
+    await page.route('**/fx/gone.json', (route) => route.fulfill({ status: 404, body: 'nope' }));
+  }
+
+  async function countRows(page, merge: boolean) {
+    return page.evaluate(async (mergeSources) => {
+      const engine = new Comunica.QueryEngine();
+      const { sources, failures, triples } = await window.prepareSources(engine, 'fx/catalog.json', { merge: mergeSources });
+      const stream = await engine.queryBindings('SELECT ?o WHERE { <http://example.org/x> <http://example.org/p> ?o }', { sources });
+      const rows = await stream.toArray();
+      return { rows: rows.length, failures: failures.length, triples, sources: sources.length };
+    }, merge);
+  }
+
+  test('merges sources so that a triple stated in two files is returned once', async ({ page }) => {
+    await page.goto('/query.html');
+    await routeFixtures(page);
+
+    const merged = await countRows(page, true);
+    expect(merged).toMatchObject({ rows: 1, sources: 1, triples: 2 });
+    const federated = await countRows(page, false);
+    expect(federated.rows).toBe(2); // what Comunica does by default, and why the merge exists
+  });
+
+  test('a source that cannot be loaded is reported and the others still answer', async ({ page }) => {
+    await page.goto('/query.html');
+    await routeFixtures(page);
+
+    const result = await countRows(page, true);
+    expect(result.failures).toBe(1);
+    expect(result.rows).toBe(1);
+  });
+
+  test('the page lists failed sources and keeps the status Ready when none fail', async ({ page }) => {
+    await routeFixtures(page);
+    await page.route('**/query.html', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: (await response.text()).replace('<yasgui-playground', '<yasgui-playground catalog-url="fx/catalog.json"') });
+    });
+    await page.goto('/query.html');
+
+    await expect(page.locator('[data-role="source-errors"] li')).toHaveCount(1);
+    await expect(page.locator('[data-role="source-errors"] li')).toContainText('gone.json');
+    await expect(page.getByRole('status')).toContainText('1 source could not be loaded');
+  });
+
   test('minimal page runs queries with only standard result plugins and can switch result views', async ({ page }) => {
     await page.goto('/minimal.html');
     await expect(page.getByRole('status')).toHaveText('Ready');
